@@ -90,9 +90,7 @@ def memoize(f=None, max_size: int = None, cache_exceptions: bool = False):
 
             From https://stackoverflow.com/questions/30104047/how-can-i-decorate-an-instance-method-with-a-decorator-class
             """
-            from functools import partial
-
-            return partial(self.__call__, instance)
+            return functools.partial(self.__call__, instance)
 
         def __instancecheck__(self, other):
             """Make isinstance() work"""
