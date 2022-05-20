@@ -1,14 +1,21 @@
 import functools
+import inspect
 from collections import OrderedDict
 from typing import Callable
 
 
-def memoize(f=None, max_size: int = None, cache_exceptions: bool = False):
+def memoize(f=None, max_size: int = None, cache_exceptions: bool = False, arg_hash_function: Callable = hash):
     """Decorator to memoize a class, function, or method.
 
-    Using this decorator will memoize the wrapped entity.  There is some overhead to the memoization logic due to the
-    cache constructs, and functions around such, so you should really only memoize a function or class that contains
-    potentially expensive computations. i.e. Don't use this just to cache very simple property objects or functions.
+    Using this decorator will memoize the wrapped entity.
+
+    If the wrapped entity is a regular function call, and none of the extra features are set (i.e. all the parameters
+    are set to their defaults), this will delegate to functools.lru_cache to avoid the performance hit overhead of
+    using a callable class with instance methods and attributes.
+
+    There is some overhead to the memoization logic due to the cache constructs, and functions around such, so you
+    should really only memoize a function or class that contains potentially expensive computations.
+    i.e. Don't use this just to cache very simple property objects or functions.
 
     For classes, uses the memoized class' __init__ *args and **kwargs as keys.
     For functions/methods, uses the *args and **kwargs as keys.
@@ -24,12 +31,15 @@ def memoize(f=None, max_size: int = None, cache_exceptions: bool = False):
     :param max_size: Max number of entries to memoize for the particular class
     :param cache_exceptions: True to also cache exceptions raised during object creation of the memoized class and
         raise the cached exception if creating again with the same args.
+    :param arg_hash_function: Hash function to call the args list and EACH keyword-arg key/value to ultimately use as
+        the cache key.  Default is the hash() function.  You can try str() or a custom function to support lists.
+        Note: This can heavily impact performance.
     :return: The memoized Class after wrapping it with the memoizer
     """
 
     class Memoized:
 
-        def __init__(self, func, maxsize: int = None, cache_exc: bool = False, arg_hash_func: Callable = str):
+        def __init__(self, func, maxsize: int = None, cache_exc: bool = False, arg_hash_func: Callable = hash):
             """Constructor.
 
             This should only be called once per entity (class, function, method) that has the @memoize annotation.
@@ -41,7 +51,7 @@ def memoize(f=None, max_size: int = None, cache_exceptions: bool = False):
             :param cache_exc: True to also cache exceptions raised during object creation of the memoized class, or
                 invoking the function/method and raise the cached exception if called again with the same args.
             :param arg_hash_func: Hash function to call on EACH arg and keyword-arg to ultimately use as the cache key.
-                Default is the str() function to support lists.  hash() should work if none of the args contain lists.
+                Default is the hash() function.  You can try str() function or a custom function to support lists.
                 Note: This can heavily impact performance.
             """
             self._f = func
@@ -71,7 +81,15 @@ def memoize(f=None, max_size: int = None, cache_exceptions: bool = False):
             :param args: args to the func
             :param kwargs: keyword-args to the func
             """
-            key = self._generate_key(args, kwargs)
+            # Generate key
+            key = (self._arg_hash_func(args))
+            if kwargs:
+                key += (object())
+                for k, v in kwargs.items():
+                    key += (self._arg_hash_func(k))
+                    key += (self._arg_hash_func(v))
+            key = hash(key)
+            # Fetch from cache or call callable
             if key in self._cache:
                 res = self._cache[key]
                 if self._maxsize:
@@ -109,18 +127,19 @@ def memoize(f=None, max_size: int = None, cache_exceptions: bool = False):
             """Make isinstance() work"""
             return isinstance(other, self._f)
 
-        def _generate_key(self, args, kwargs) -> tuple:
-            """Quick and dirty hash key generation from args and kwargs"""
-            key = [self._arg_hash_func(args)]
-            for k, v in sorted(kwargs.items()):
-                key.append(self._arg_hash_func(k))
-                key.append(self._arg_hash_func(v))
-            return tuple(key)
+    @functools.lru_cache(maxsize=max_size)
+    def _lru_func_call(*args, **kwargs):
+        return f(*args, **kwargs)
 
     if f:
-        return Memoized(f)
+        if not cache_exceptions and not inspect.isclass(f) and arg_hash_function == hash:
+            # Delegate to functools.lru_cache if none of the other extra features we added are being used to avoid
+            # performance hits of using a callable class with instance methods
+            return _lru_func_call
+        else:
+            return Memoized(f)
     else:
         def wrapper(func):
-            return Memoized(func, max_size, cache_exceptions)
+            return Memoized(func, max_size, cache_exceptions, arg_hash_function)
 
         return wrapper

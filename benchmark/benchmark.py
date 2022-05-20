@@ -49,7 +49,7 @@ def benchmark_memoized_class_simple(num_iters=1000000, init_computations=1000):
     print(f"Benchmark test for Memoized vs Non-memoized classes with [{init_computations}] computations in their"
           f"__init__() methods for [{num_iters}] iterations")
 
-    @memoize
+    @memoize(arg_hash_function=str)
     class MemoizedTest:
         def __init__(self, p1, p2, p3, p4):
             self._p1 = p1
@@ -126,6 +126,12 @@ def benchmark_fib(num_iters=10000000, fib_num=100):
             return n
         return memo_fib(n - 1) + memo_fib(n - 2)
 
+    @memoize(cache_exceptions=True)
+    def memo_fib_non_lru(n):
+        if n in (0, 1):
+            return n
+        return memo_fib_non_lru(n - 1) + memo_fib_non_lru(n - 2)
+
     def non_memo_fib(n):
         if n in (0, 1):
             return n
@@ -152,11 +158,18 @@ def benchmark_fib(num_iters=10000000, fib_num=100):
 
     start_time = time.time()
     for _ in range(num_iters):
+        memo_fib_non_lru(fib_num)
+    end_time = time.time() - start_time
+    print(f"@memoize(cache_exceptions=True) (to avoid delegation to functools.lru_cache) fib average time (ms): "
+          f"{end_time / num_iters * 1000}")
+
+    start_time = time.time()
+    for _ in range(num_iters):
         lru_cache_fib(fib_num)
     end_time = time.time() - start_time
     print(f"@functools.lru_cache fib average time (ms): {end_time/num_iters * 1000}")
 
 
 if __name__ == "__main__":
-    #benchmark_memoized_class_simple()
+    benchmark_memoized_class_simple()
     benchmark_fib()
