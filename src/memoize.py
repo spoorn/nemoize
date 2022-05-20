@@ -1,9 +1,14 @@
 import functools
 from collections import OrderedDict
+from typing import Callable
 
 
 def memoize(f=None, max_size: int = None, cache_exceptions: bool = False):
     """Decorator to memoize a class, function, or method.
+
+    Using this decorator will memoize the wrapped entity.  There is some overhead to the memoization logic due to the
+    cache constructs, and functions around such, so you should really only memoize a function or class that contains
+    potentially expensive computations. i.e. Don't use this just to cache very simple property objects or functions.
 
     For classes, uses the memoized class' __init__ *args and **kwargs as keys.
     For functions/methods, uses the *args and **kwargs as keys.
@@ -23,19 +28,26 @@ def memoize(f=None, max_size: int = None, cache_exceptions: bool = False):
     """
 
     class Memoized:
-        def __init__(self, func, maxsize: int = None, cache_exc: bool = False):
+
+        def __init__(self, func, maxsize: int = None, cache_exc: bool = False, arg_hash_func: Callable = str):
             """Constructor.
 
             This should only be called once per entity (class, function, method) that has the @memoize annotation.
+
+            TODO: Add fully custom hash functions
 
             :param func: Entity (class, function, method) to memoize
             :param maxsize: Max number of entries to memoize for the particular entity
             :param cache_exc: True to also cache exceptions raised during object creation of the memoized class, or
                 invoking the function/method and raise the cached exception if called again with the same args.
+            :param arg_hash_func: Hash function to call on EACH arg and keyword-arg to ultimately use as the cache key.
+                Default is the str() function to support lists.  hash() should work if none of the args contain lists.
+                Note: This can heavily impact performance.
             """
             self._f = func
             self._maxsize = maxsize
             self._cache_exceptions = cache_exc
+            self._arg_hash_func = arg_hash_func
             self._cache: OrderedDict = OrderedDict()
             # Make the Memoized class masquerade as the object we are memoizing.
             # Preserve class attributes
@@ -62,7 +74,8 @@ def memoize(f=None, max_size: int = None, cache_exceptions: bool = False):
             key = self._generate_key(args, kwargs)
             if key in self._cache:
                 res = self._cache[key]
-                self._cache.move_to_end(key)
+                if self._maxsize:
+                    self._cache.move_to_end(key)
                 if isinstance(res, Exception):
                     raise res
                 return res
@@ -96,21 +109,17 @@ def memoize(f=None, max_size: int = None, cache_exceptions: bool = False):
             """Make isinstance() work"""
             return isinstance(other, self._f)
 
-        @staticmethod
-        def _generate_key(args, kwargs) -> tuple:
+        def _generate_key(self, args, kwargs) -> tuple:
             """Quick and dirty hash key generation from args and kwargs"""
-            key = []
-            for arg in args:
-                key.append(id(arg))
-            for k, v in kwargs.items():
-                key.append(id(k))
-                key.append(id(v))
+            key = [self._arg_hash_func(args)]
+            for k, v in sorted(kwargs.items()):
+                key.append(self._arg_hash_func(k))
+                key.append(self._arg_hash_func(v))
             return tuple(key)
 
     if f:
         return Memoized(f)
     else:
-
         def wrapper(func):
             return Memoized(func, max_size, cache_exceptions)
 
