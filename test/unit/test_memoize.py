@@ -1,4 +1,4 @@
-from src.memoize import memoize
+from nemoize import memoize
 
 
 def test_memoize_cached_object():

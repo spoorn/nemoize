@@ -3,7 +3,7 @@
 import functools
 import time
 
-from src.memoize import memoize
+from nemoize.memoize import memoize
 
 
 def simplified_memoize(f=None):

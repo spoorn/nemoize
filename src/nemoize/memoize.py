@@ -5,7 +5,7 @@ from typing import Callable
 
 
 def memoize(f=None, max_size: int = None, cache_exceptions: bool = False, arg_hash_function: Callable = hash):
-    """Decorator to memoize a class, function, or method.
+    """Decorator utility to memoize a class, function, or method.
 
     Using this decorator will memoize the wrapped entity.
 

@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "nemoize"
+version = "0.1.0"
+description = "Decorator utility to memoize a class, function, or method"
+authors = ["spoorn <spookump@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/spoorn/nemoize"
+repository = "https://github.com/spoorn/nemoize"
+keywords = ["memoize", "utility", "decorator", "decorators"]
+classifiers = [
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development :: Code Generators",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules"
+]
+packages = [
+    { include = "nemoize", from = "src" }
+]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.1.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
