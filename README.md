@@ -42,11 +42,10 @@ class Owl:
 
 There are also various configuration parameters to `memoize()`:
 
-Max number of entries to keep in the cache: `@memoize(max_size=13)`
-
-Also cache exceptions, so any raised Exceptions will be the exact same Exception instance: `@memoize(cache_exceptions=True)`
-
-Together: `@memoize(max_size=13, cache_exceptions=True)`
+- `@memoize(max_size=13)` : Max number of entries to keep in the cache: 
+- `@memoize(cache_exceptions=True)` : Also cache exceptions, so any raised Exceptions will be the exact same Exception instance: 
+- `@memoize(max_size=13, cache_exceptions=True)` : Together
+- `@memoize(arg_hash_function=str)` : Changes the hash function on arg and each keyword-arg to use the str() function, which can make lists "hashable"
 
 # Testing
 The unit tests in `test/unit/test_memoize.py` run through various use cases of using the @memoize annotation on classes, functions, and instance methods.
