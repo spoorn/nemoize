@@ -1,8 +1,25 @@
 # nemoize
-Simple Python Memoizer for classes, functions, and methods.
+Simple Python Memoizer decorator for classes, functions, and methods.
+
+# Installation
+nemoize is available on PyPi
+
+```commandline
+python3 -m pip install nemoize
+```
+
+Or you can install manually via the built distribution (wheel)/source dist from [PyPi](pypi.org/project/nemoize) or [github](https://github.com/spoorn/nemoize).
+
 
 # How to Use
-This isn't published to PyPi or anything, just a little fun coding.  You can try it out by pulling the code in locally to your project and adding the `@memoize` decorator to classes, functions, and instance methods.
+
+Import
+
+```python
+from nemoize import memoize
+```
+
+Then use the `@memoize` decorator on various entities as seen below
 
 ### Using on a Class
 
@@ -49,3 +66,20 @@ There are also various configuration parameters to `memoize()`:
 
 # Testing
 The unit tests in `test/unit/test_memoize.py` run through various use cases of using the @memoize annotation on classes, functions, and instance methods.
+
+# Benchmarking
+There is a benchmarking utility under [`benchmark/`](https://github.com/spoorn/nemoize/tree/main/benchmark) that is used for benchmarking nemoize performance against other options and non-memoized scenarios.
+
+Example numbers:
+
+```commandline
+Benchmark test for Memoized vs Non-memoized classes with [1000] computations in their__init__() methods for [1000000] iterations
+Non-memoized class creation + empty method call average time (ms): 0.01550699806213379
+Memoized class creation + empty method call average time (ms): 0.0012589995861053468
+
+Benchmark test for @memoize, non-memoized, a @simplified_memoize, and @functools.lru_cache comparison usingfunction calculating fibonacci sum for [100] fib numbers, for [10000000] iterations
+@simplified_memoize fib average time (ms): 0.0001555999994277954
+@memoize fib average time (ms): 4.4699978828430175e-05
+@memoize(cache_exceptions=True) (to avoid delegation to functools.lru_cache) fib average time (ms): 0.00034309999942779544
+@functools.lru_cache fib average time (ms): 4.440000057220459e-05
+```
