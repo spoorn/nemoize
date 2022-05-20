@@ -50,7 +50,7 @@ class Owl:
         self.food = 1337
         pass
 
-    @memoize(max_size)
+    @memoize(max_size=5)
     def eat(self, num):
         self.food -= num
 ```
